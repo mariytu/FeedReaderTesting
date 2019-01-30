@@ -38,7 +38,7 @@ $(function() {
 			for (const feed of allFeeds) {
 				expect(feed).toBeDefined();
 				expect(feed.url).toBeDefined(); // the url exist
-				expect(feed.url.length).not.toBe(0); // the url is not empty
+				expect(feed.url.trim().length).not.toBe(0); // the url is not empty
 			}
         });
 
@@ -54,7 +54,7 @@ $(function() {
 			for (const feed of allFeeds) {
 				expect(feed).toBeDefined();
 				expect(feed.name).toBeDefined(); // the name exist
-				expect(feed.name.length).not.toBe(0); // the name is not empty
+				expect(feed.name.trim().length).not.toBe(0); // the name is not empty
 			}
         });
     });
@@ -72,7 +72,7 @@ $(function() {
 			const bodyClassName = bodyElem[0].className; // getting body class name
 			
 			expect(bodyClassName).toBeDefined(); // body class name exist
-			expect(bodyClassName).toBe('menu-hidden'); // body class name has the corresponding class name
+			expect(bodyClassName).toContain('menu-hidden'); // body class name has the corresponding class name
 		});
 		
 		
@@ -87,7 +87,7 @@ $(function() {
 			
 			// ensure that menu is hidden
 			expect(bodyClassName).toBeDefined();
-			expect(bodyClassName).toBe('menu-hidden');
+			expect(bodyClassName).toContain('menu-hidden');
 			
 			// simulating a mouse click without actually clicking it
 			$('body').toggleClass('menu-hidden');
@@ -95,7 +95,7 @@ $(function() {
 			// ensure that menu is open
 			bodyClassName = bodyElem[0].className; // getting body class name
 			expect(bodyClassName).toBeDefined();
-			expect(bodyClassName).toBe(''); // when menu is open, there is no body class name
+			expect(bodyClassName).not.toContain('menu-hidden'); // when menu is open, there is no body class name
 			
 			// simulating a mouse click without actually clicking it
 			$('body').toggleClass('menu-hidden');
@@ -103,7 +103,7 @@ $(function() {
 			// ensure that menu is hidden again
 			bodyClassName = bodyElem[0].className;
 			expect(bodyClassName).toBeDefined();
-			expect(bodyClassName).toBe('menu-hidden');
+			expect(bodyClassName).toContain('menu-hidden');
 		});
 	});
 	
@@ -126,11 +126,29 @@ $(function() {
 		it('loadFeed is called and completes its work', function(done) { // When is done!!
 			const lengthEntries = $('.feed .entry-link').length; // getting entries of the DOM
 			expect(lengthEntries).toBeDefined();
-			expect(lengthEntries).not.toBeGreaterThan(0); // ensure that entries of the DOM are > 0
+			expect(lengthEntries).toBeGreaterThan(0); // ensure that entries of the DOM are > 0
 			done();
 		});
 	});
 	
+	/**
+	* @description Function to transform all entries of one feed from html to an object array
+	* @param {string} feeds - The entries of one feed as html
+	* @returns {array} All entries of one feed as an array with title, link and content snippet
+	*/
+	function gettingData(feeds) {
+		let array = [];
+		
+		$(feeds).each(function() {
+			const hrefFeed = this.href;
+			const title = $(this).find('.entry h2')[0].innerText;
+			const contentSnippet = $(this).find('.entry p')[0].innerText;
+			
+			array.push({ title : title, link : hrefFeed, contentSnippet : contentSnippet });
+		});
+		
+		return array;
+	}
 	
 	/* TODO: Write a new test suite named "New Feed Selection" */
 	describe('New Feed Selection', function() {
@@ -138,19 +156,26 @@ $(function() {
          * by the loadFeed function that the content actually changes.
          * Remember, loadFeed() is asynchronous.
          */
-		const lengthEntriesBefore = $('.feed .entry-link').length; // getting entries of the DOM before calling loadFeed function
+		let feed1, feed2;
 		
 		beforeEach(function(done) {
 			loadFeed(0, function() { // calling loadFeed function
-				done();
+				feed1 = $('.feed .entry-link'); // the content on first call
+				
+				loadFeed(1, function() { // calling loadFeed function
+					feed2 = $('.feed .entry-link'); // the content load on second call
+					done();
+				});
 			});
 		});
 		
 		it('loadFeed is called and the content actually changes', function(done) {
-			const lengthEntriesAfter = $('.feed .entry-link').length; // getting entries of the DOM after calling loadFeed function
-			expect(lengthEntriesAfter).toBeDefined();
-			expect(lengthEntriesAfter).not.toBe(0);
-			expect(lengthEntriesAfter).toBeGreaterThan(lengthEntriesBefore); // comparision between lengthEntries before and after
+			var entries1 = gettingData(feed1);
+			var entries2 = gettingData(feed2);
+			
+			expect(entries1).toBeDefined();
+			expect(entries2).toBeDefined();
+			expect(entries1).not.toEqual(entries2); // comparison of entries of two differents feeds
 			done();
 		});
 	});
